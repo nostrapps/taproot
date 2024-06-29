@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>npub to bitcoin</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: 'Roboto', sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        color: #333;
+      }
+      header {
+        background-color: #673ab7; /* Deep Purple */
+        color: white;
+        padding: 20px 0;
+        text-align: center;
+      }
+      header nav a {
+        color: white;
+        margin: 0 15px;
+        text-decoration: none;
+      }
+      .hero {
+        background-image: url('bitcoin-background.jpg');
+        background-size: cover;
+        background-position: center;
+        text-align: center;
+        padding: 100px 20px;
+        color: #212121; /* Darker color for better visibility */
+        text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5); /* Adding slight text shadow for better contrast */
+      }
+      .hero h1 {
+        font-size: 3em;
+        margin: 0;
+      }
+      .hero p {
+        font-size: 1.5em;
+      }
+      .hero .cta {
+        margin-top: 20px;
+        padding: 15px 30px;
+        background-color: #03a9f4; /* Sky Blue */
+        color: white;
+        border: none;
+        font-size: 1.2em;
+        cursor: pointer;
+      }
+      .form-section {
+        padding: 40px 20px;
+        text-align: center;
+      }
+      .form-section form {
+        display: inline-block;
+        margin-top: 20px;
+      }
+      .form-section input[type='text'] {
+        padding: 10px;
+        width: 460px;
+        margin-right: 10px;
+        border: 1px solid #673ab7; /* Deep Purple */
+      }
+      .form-section button {
+        padding: 10px 20px;
+        background-color: #03a9f4; /* Sky Blue */
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      .info-section {
+        padding: 40px 20px;
+        background-color: #fff;
+        text-align: center;
+      }
+      footer {
+        background-color: #333;
+        color: white;
+        text-align: center;
+        padding: 20px 0;
+      }
+      footer a {
+        color: #03a9f4; /* Sky Blue */
+        text-decoration: none;
+        margin: 0 10px;
+      }
+    </style>
+    <script type="module">
+      import {
+        html,
+        render,
+        Component
+      } from 'https://unpkg.com/htm/preact/standalone.module.js'
+      import { bech32, bech32m } from 'https://esm.run/bech32'
+
+      class App extends Component {
+        constructor() {
+          super()
+          this.state = {
+            fileContent: '',
+            publicKey: '',
+            taproot: '',
+            bitcoin: '',
+            testnet4: '',
+            status: []
+          }
+          this.handleLogin = this.handleLogin.bind(this)
+        }
+
+        async componentDidMount() {}
+
+        async handleLogin() {
+          try {
+            const publicKey = await window.nostr.getPublicKey()
+
+            var taproot_prefix = 'tb'
+            var buffer = new Uint8Array(
+              publicKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+            )
+            const scriptVersion = 1
+            console.log('buffer', buffer)
+            var words = bech32.toWords(buffer)
+            words = [scriptVersion, ...words]
+
+            var taproot = bech32m.encode(taproot_prefix, words, 1024)
+            console.log(taproot)
+            var testnet4 = taproot
+
+            var taproot_prefix = 'bc'
+            var buffer = new Uint8Array(
+              publicKey.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+            )
+            console.log('buffer', buffer)
+            var words = bech32.toWords(buffer)
+            words = [scriptVersion, ...words]
+
+            var taproot = bech32m.encode(taproot_prefix, words, 1024)
+            console.log(taproot)
+            var bitcoin = taproot
+
+            this.setState({
+              publicKey: publicKey,
+              taproot: taproot,
+              bitcoin: bitcoin,
+              testnet4: testnet4
+            })
+          } catch (error) {
+            console.error('Error fetching public key:', error)
+          }
+        }
+
+        render() {
+          return html`
+            <header>
+              <nav>
+                <a href="#">Home</a>
+              </nav>
+            </header>
+            <div class="hero">
+              <h1>Nostr npub to Bitcoin taproot</h1>
+              <button class="cta" onClick=${this.handleLogin}>
+                Get Address using Nostr Extension
+              </button>
+            </div>
+            <div class="form-section">
+              <form>
+                Bitcoin address <br />
+                <input
+                  readonly
+                  type="text"
+                  placeholder="Login to see your bitcoin address"
+                  value=${this.state.bitcoin}
+                  readonly
+                />
+                <br />
+                Testnet address <br />
+                <input
+                  readonly
+                  type="text"
+                  placeholder="Login to see your testnet address"
+                  value=${this.state.testnet4}
+                  readonly
+                />
+              </form>
+              <br />
+            </div>
+            <div class="info-section">
+              <h2>How It Works</h2>
+              <p>
+                Nostr identity is based on bitcoin taproot. The Npub is an
+                enoding of your taproot key with npub prefix. Bitcoin taproot
+                and testnet use the prefixes bc1p and tb1p.
+              </p>
+              <h2>What is Bitcoin Testnet4?</h2>
+              <p>
+                Bitcoin Testnet4 is a testing environment for Bitcoin
+                development, separate from the main Bitcoin network. It allows
+                developers to experiment without risking real funds. Faucets
+                exist <a href="https://testnet4.anyone.eu.org/">here</a>,
+                <a href="https://coinfaucet.eu/en/btc-testnet4/">here</a> and,
+                <a href="https://mempool.space/testnet4/faucet">here</a>. A
+                wallet exists <a href="https://t4-wallet.anyone.eu.o">here</a>.
+              </p>
+            </div>
+            <footer>
+              <p>Built with love by nostrapps</p>
+            </footer>
+          `
+        }
+      }
+
+      render(html`<${App} />`, document.body)
+    </script>
+  </head>
+  <body></body>
+</html>
